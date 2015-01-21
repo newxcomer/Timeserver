@@ -25,7 +25,7 @@ var (
 )
 
 // Display the current time
-func success(response http.ResponseWriter, request *http.Request) {
+func timeHandler(response http.ResponseWriter, request *http.Request) {
 	// Current time format
 	const timeFormat = "3:04:052 PM"
 
@@ -44,8 +44,8 @@ func success(response http.ResponseWriter, request *http.Request) {
 	fmt.Fprintln(response, "</html>")
 }
 
-// Display the 404 error
-func serverError(response http.ResponseWriter, request *http.Request) {
+// General handler for the home page
+func generalHandler(response http.ResponseWriter, request *http.Request) {
 	// Return status
 	response.WriteHeader(http.StatusNotFound)
 
@@ -56,9 +56,32 @@ func serverError(response http.ResponseWriter, request *http.Request) {
 	fmt.Fprintln(response, "</html>")
 }
 
+// Login handler for the form
+func loginHandler(response http.ResponseWriter, request *http.Request) {
+	// Print the login
+	fmt.Fprintln(response, "<html>")
+	fmt.Fprintln(response, "<body>")
+	fmt.Fprintln(response, "<form action=\"login\">")
+	fmt.Fprintln(response, " What is your name, Earthling?")
+	fmt.Fprintln(response, " <input type=\"text\" name=\"name\" size=\"50\">")
+	fmt.Fprintln(response, " <input type=\"submit\">")
+	fmt.Fprintln(response, "</form>")
+	fmt.Fprintln(response, "</p>")
+	fmt.Fprintln(response, "</body>")
+	fmt.Fprintln(response, "</html>")
+
+	// Read the name value from the form
+	request.ParseForm()
+	userName := request.FormValue("name")
+
+	// set cookies
+	cookie := &http.Cookie{Name: "UserCookie", Value: 1, Expires: time.Now().Add(356 * 24 * time.Hour), HttpOnly: true}
+	http.SetCookie(response, cookie)
+
+}
+
 // Start the server
 func main() {
-
 	// Declare flags
 	portPtr := flag.Int("port", 8080, "port_number")
 	VPtr := flag.Bool("V", false, "display_version")
@@ -72,8 +95,8 @@ func main() {
 		return
 	}
 
-	http.HandleFunc("/time", success) // handle /time path
-	http.HandleFunc("/", serverError) // other path
+	http.HandleFunc("/time", timeHandler) // handle /time path
+	http.HandleFunc("/", generalHandler)  // other path
 	err := http.ListenAndServe(":"+strconv.Itoa(*portPtr), nil)
 
 	// Server error, display message and exit the application
