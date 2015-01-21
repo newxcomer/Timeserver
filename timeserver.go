@@ -46,14 +46,15 @@ func timeHandler(response http.ResponseWriter, request *http.Request) {
 
 // General handler for the home page
 func generalHandler(response http.ResponseWriter, request *http.Request) {
-	// Return status
-	response.WriteHeader(http.StatusNotFound)
+	// Check the cookie from the client
+	cookie, _ := request.Cookie("UserCookie")
 
-	fmt.Fprintln(response, "<html>")
-	fmt.Fprintln(response, "<body>")
-	fmt.Fprintln(response, "<p>These are not the URLs you're looking for.</p>")
-	fmt.Fprintln(response, "</body>")
-	fmt.Fprintln(response, "</html>")
+	// If user is logged in, print the greeting
+	if cookie.Value != "" {
+		fmt.Fprintln(response, "Greetings, "+cookie.Value+".")
+	} else { // Redirect to log in
+		http.Redirect(response, request, "/login?name=name", http.StatusFound)
+	}
 }
 
 // Login handler for the form
@@ -74,10 +75,30 @@ func loginHandler(response http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 	userName := request.FormValue("name")
 
-	// set cookies
-	cookie := &http.Cookie{Name: "UserCookie", Value: 1, Expires: time.Now().Add(356 * 24 * time.Hour), HttpOnly: true}
+	// Set cookies on the client
+	cookie := &http.Cookie{Name: "UserCookie", Value: userName, Expires: time.Now().Add(356 * 24 * time.Hour), HttpOnly: true}
 	http.SetCookie(response, cookie)
+}
 
+// Logout handler for the form
+func logoutHandler(response http.ResponseWriter, request *http.Request) {
+	// Check the cookie for error
+	_, err := request.Cookie("UserCookie")
+
+	// If no error, cleared the cookie
+	if err != nil {
+		fmt.Printf("Cookie error: %s!", err)
+	} else {
+		http.SetCookie(response, &(http.Cookie{Name: "UserCookie", Expires: time.Now()}))
+
+		// Print the goodbye
+		fmt.Fprintln(response, "<html>")
+		fmt.Fprintln(response, "<head>")
+		fmt.Fprintln(response, "<META http-equiv=\"refresh\" content=\"10;URL=/\">")
+		fmt.Fprintln(response, "<p>Good-bye.</p>")
+		fmt.Fprintln(response, "</body>")
+		fmt.Fprintln(response, "</html>")
+	}
 }
 
 // Start the server
@@ -95,8 +116,10 @@ func main() {
 		return
 	}
 
-	http.HandleFunc("/time", timeHandler) // handle /time path
-	http.HandleFunc("/", generalHandler)  // other path
+	http.HandleFunc("/time", timeHandler)         // handle /time path
+	http.HandleFunc("/", generalHandler)          // general path
+	http.HandleFunc("/login?name=", loginHandler) // login path
+	http.HandleFunc("/logout", logoutHandler)     // logout path
 	err := http.ListenAndServe(":"+strconv.Itoa(*portPtr), nil)
 
 	// Server error, display message and exit the application
