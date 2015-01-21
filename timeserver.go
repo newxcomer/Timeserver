@@ -26,6 +26,12 @@ var (
 
 // Display the current time
 func timeHandler(response http.ResponseWriter, request *http.Request) {
+	// Check the path
+	if request.URL.Path != "/time" {
+		errorHandler(respone, request)
+		return
+	}
+
 	// Current time format
 	const timeFormat = "3:04:052 PM"
 
@@ -46,6 +52,12 @@ func timeHandler(response http.ResponseWriter, request *http.Request) {
 
 // General handler for the home page
 func generalHandler(response http.ResponseWriter, request *http.Request) {
+	// Check the path
+	if request.URL.Path != "/" && request.URL.Path != "/index.html" {
+		errorHandler(respone, request)
+		return
+	}
+
 	// Check the cookie from the client
 	cookie, _ := request.Cookie("UserCookie")
 
@@ -59,6 +71,12 @@ func generalHandler(response http.ResponseWriter, request *http.Request) {
 
 // Login handler for the form
 func loginHandler(response http.ResponseWriter, request *http.Request) {
+	// Check the path
+	if request.URL.Path != "/login?name=name" {
+		errorHandler(respone, request)
+		return
+	}
+
 	// Print the login
 	fmt.Fprintln(response, "<html>")
 	fmt.Fprintln(response, "<body>")
@@ -82,6 +100,12 @@ func loginHandler(response http.ResponseWriter, request *http.Request) {
 
 // Logout handler for the form
 func logoutHandler(response http.ResponseWriter, request *http.Request) {
+	// Check the path
+	if request.URL.Path != "/logout" {
+		errorHandler(respone, request)
+		return
+	}
+
 	// Check the cookie for error
 	_, err := request.Cookie("UserCookie")
 
@@ -101,6 +125,18 @@ func logoutHandler(response http.ResponseWriter, request *http.Request) {
 	}
 }
 
+// Display the 404 error
+func errorHandler(response http.ResponseWriter, request *http.Request) {
+	// Return status
+	response.WriteHeader(http.StatusNotFound)
+
+	fmt.Fprintln(response, "<html>")
+	fmt.Fprintln(response, "<body>")
+	fmt.Fprintln(response, "<p>These are not the URLs you're looking for.</p>")
+	fmt.Fprintln(response, "</body>")
+	fmt.Fprintln(response, "</html>")
+}
+
 // Start the server
 func main() {
 	// Declare flags
@@ -116,10 +152,10 @@ func main() {
 		return
 	}
 
-	http.HandleFunc("/time", timeHandler)         // handle /time path
-	http.HandleFunc("/", generalHandler)          // general path
-	http.HandleFunc("/login?name=", loginHandler) // login path
-	http.HandleFunc("/logout", logoutHandler)     // logout path
+	http.HandleFunc("/time", timeHandler)             // handle /time path
+	http.HandleFunc("/", generalHandler)              // general path
+	http.HandleFunc("/login?name=name", loginHandler) // login path
+	http.HandleFunc("/logout", logoutHandler)         // logout path
 	err := http.ListenAndServe(":"+strconv.Itoa(*portPtr), nil)
 
 	// Server error, display message and exit the application
